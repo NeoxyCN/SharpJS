@@ -1,0 +1,202 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "SharpJS.Example/1.0.0": {
+        "dependencies": {
+          "SharpJS.Core": "1.0.0"
+        },
+        "runtime": {
+          "SharpJS.Example.dll": {}
+        }
+      },
+      "Puerts.Core/3.0.0": {
+        "runtime": {
+          "lib/net8.0/Puerts.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Puerts.Core.Complete/3.0.0": {
+        "dependencies": {
+          "Puerts.Core": "3.0.0",
+          "Puerts.Core.NativeAssets.Linux": "3.0.0",
+          "Puerts.Core.NativeAssets.Win32": "3.0.0",
+          "Puerts.Core.NativeAssets.macOS": "3.0.0"
+        }
+      },
+      "Puerts.Core.NativeAssets.Linux/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/linux-x64/native/libPuertsCore.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Puerts.Core.NativeAssets.macOS/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/osx/native/PuertsCore.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Puerts.Core.NativeAssets.Win32/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/win-x64/native/PuertsCore.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Puerts.V8/3.0.0": {
+        "dependencies": {
+          "Puerts.Core": "3.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Puerts.V8.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Puerts.V8.Complete/3.0.0": {
+        "dependencies": {
+          "Puerts.Core.Complete": "3.0.0",
+          "Puerts.V8": "3.0.0",
+          "Puerts.V8.NativeAssets.Linux": "3.0.0",
+          "Puerts.V8.NativeAssets.Win32": "3.0.0",
+          "Puerts.V8.NativeAssets.macOS": "3.0.0"
+        }
+      },
+      "Puerts.V8.NativeAssets.Linux/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/linux-x64/native/libPapiV8.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Puerts.V8.NativeAssets.macOS/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/osx/native/PapiV8.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Puerts.V8.NativeAssets.Win32/3.0.0": {
+        "runtimeTargets": {
+          "runtimes/win-x64/native/PapiV8.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "SharpJS.Core/1.0.0": {
+        "dependencies": {
+          "Puerts.V8.Complete": "3.0.0"
+        },
+        "runtime": {
+          "SharpJS.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SharpJS.Example/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Puerts.Core/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HUWyT2XgeTSNVkT59l1EJ3i9SztPmXRXjyP2Fgv1ivBCp9ZWDuYY1lc47tizuMT2/PdYHPtnm6pvy482gkSbPw==",
+      "path": "puerts.core/3.0.0",
+      "hashPath": "puerts.core.3.0.0.nupkg.sha512"
+    },
+    "Puerts.Core.Complete/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hwP0J76wSfAd2hmobPSqxfo7kessFgjG3zwo0mtuYfNz+WR/8bCpJXRuzrzMjkWF5VSVwZyVZ9/oRYdMo4TERg==",
+      "path": "puerts.core.complete/3.0.0",
+      "hashPath": "puerts.core.complete.3.0.0.nupkg.sha512"
+    },
+    "Puerts.Core.NativeAssets.Linux/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-o3n4OAK8PHfQBfToSzETRO5EKpz+47I027APOEGB0JbKQ5DOYw/BPxUOp1/O9zUIvNa6ba4tg4LaIGsSoSNCAw==",
+      "path": "puerts.core.nativeassets.linux/3.0.0",
+      "hashPath": "puerts.core.nativeassets.linux.3.0.0.nupkg.sha512"
+    },
+    "Puerts.Core.NativeAssets.macOS/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-f9uwM0ildUQ3hto5knaZwg2OS3EdSM74aYNJDAU8WTYiz2zpwZ6087OWwYoTorHlcb6BqHDuArDdeLi6r8m/og==",
+      "path": "puerts.core.nativeassets.macos/3.0.0",
+      "hashPath": "puerts.core.nativeassets.macos.3.0.0.nupkg.sha512"
+    },
+    "Puerts.Core.NativeAssets.Win32/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XLsz/VU2Nt+Cc7dGWzhmwZu7au8GqrMM/w330pzaD5XyYz/AW01Pn3BiJtl9DMuvAt5RpH+TglGs9HqzRe8Fjw==",
+      "path": "puerts.core.nativeassets.win32/3.0.0",
+      "hashPath": "puerts.core.nativeassets.win32.3.0.0.nupkg.sha512"
+    },
+    "Puerts.V8/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1TFYGyk5q2J0qirzeuxHAp+NYNdR7DNxREIkoQikgMY+swvY3OMhbVYUQg5CcSvffAsW8IqJi+zt6+GzX38RMA==",
+      "path": "puerts.v8/3.0.0",
+      "hashPath": "puerts.v8.3.0.0.nupkg.sha512"
+    },
+    "Puerts.V8.Complete/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tkbIMQu0hsMWOrYv+fjuiz7wANab6TK6mbKEIbyn1PoNYIxq5sMpRJlGUHOeVilCawOUQkj64nPP0dfO+w41iQ==",
+      "path": "puerts.v8.complete/3.0.0",
+      "hashPath": "puerts.v8.complete.3.0.0.nupkg.sha512"
+    },
+    "Puerts.V8.NativeAssets.Linux/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-jOR4Tvtyr7/z3pFJDj4/Nn1+30ENoFppLKnsrBnr5b8dQwHeeG9ASyvVIGWZPuIg/E1QCmfa2BdD9VBxwDDkiA==",
+      "path": "puerts.v8.nativeassets.linux/3.0.0",
+      "hashPath": "puerts.v8.nativeassets.linux.3.0.0.nupkg.sha512"
+    },
+    "Puerts.V8.NativeAssets.macOS/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hqmDsusQFDRg2A6nP3pRI/DYsZWfmxqh3xpYIRmrtpBPl4cw/iqpFy588L7mlIBfIIFFaPThrMmctZy9+cZODA==",
+      "path": "puerts.v8.nativeassets.macos/3.0.0",
+      "hashPath": "puerts.v8.nativeassets.macos.3.0.0.nupkg.sha512"
+    },
+    "Puerts.V8.NativeAssets.Win32/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bpSXy2EOoqRbfyymIQSXZnE2WAzIl+bOza0NILFCfDAZ2ENQzTCZB+LvOnaLJUMvLpKsWOhltBpMrRc58eB2BA==",
+      "path": "puerts.v8.nativeassets.win32/3.0.0",
+      "hashPath": "puerts.v8.nativeassets.win32.3.0.0.nupkg.sha512"
+    },
+    "SharpJS.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

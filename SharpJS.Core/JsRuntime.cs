@@ -11,17 +11,48 @@ namespace SharpJS.Core
     {
         private readonly ScriptEnv _environment;
         private readonly ILoader _scriptLoader;
+        private readonly JsEngineType _engineType;
         private bool _isDisposed;
 
-        public ScriptEnvironment() : this(new ScriptFileLoader())
+        /// <summary>
+        /// Gets the JavaScript engine type used by this environment
+        /// </summary>
+        public JsEngineType EngineType => _engineType;
+
+        /// <summary>
+        /// Creates a new ScriptEnvironment with V8 engine (default)
+        /// </summary>
+        public ScriptEnvironment() : this(JsEngineType.V8)
         {
         }
 
-        public ScriptEnvironment(ILoader scriptLoader)
+        /// <summary>
+        /// Creates a new ScriptEnvironment with the specified engine type
+        /// </summary>
+        /// <param name="engineType">The JavaScript engine to use</param>
+        public ScriptEnvironment(JsEngineType engineType) : this(engineType, new ScriptFileLoader())
+        {
+        }
+
+        /// <summary>
+        /// Creates a new ScriptEnvironment with the specified engine type and loader
+        /// </summary>
+        /// <param name="engineType">The JavaScript engine to use</param>
+        /// <param name="scriptLoader">The script loader to use</param>
+        public ScriptEnvironment(JsEngineType engineType, ILoader scriptLoader)
         {
             _scriptLoader = scriptLoader;
-            var v8Backend = new BackendV8(scriptLoader);
-            _environment = new ScriptEnv(v8Backend);
+            _engineType = engineType;
+            var backend = BackendFactory.CreateBackend(engineType, scriptLoader);
+            _environment = new ScriptEnv(backend);
+        }
+
+        /// <summary>
+        /// Creates a new ScriptEnvironment with V8 engine and custom loader (for backward compatibility)
+        /// </summary>
+        /// <param name="scriptLoader">The script loader to use</param>
+        public ScriptEnvironment(ILoader scriptLoader) : this(JsEngineType.V8, scriptLoader)
+        {
         }
 
         /// <summary>

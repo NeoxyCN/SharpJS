@@ -10,7 +10,7 @@ A PuerTS-based plugin system for .NET environments. SharpJS enables JavaScript/T
 ### Features
 
 - ✨ **Pure .NET Implementation**: Works in any .NET 8.0+ environment
-- 🚀 **PuerTS Integration**: Powered by PuerTS V8 engine for high-performance JavaScript execution
+- 🚀 **Multiple JavaScript Engines**: Choose from V8, QuickJS, or Node.js based on your needs
 - 🔌 **C# ↔ JavaScript Interop**: Seamless bidirectional communication between C# and JavaScript
 - 📦 **Plugin Management**: Built-in plugin orchestrator with lifecycle management (initialize/update/shutdown)
 - 🛠️ **Easy to Use API**: Simple API for exposing C# functionality to plugins
@@ -44,7 +44,7 @@ dotnet add package SharpJS.Core
 using SharpJS.Core;
 using System;
 
-// Create plugin orchestrator
+// Create plugin orchestrator with default V8 engine
 using var orchestrator = new PluginOrchestrator("./plugins");
 
 // Create and expose host API
@@ -63,6 +63,29 @@ while (running)
     System.Threading.Thread.Sleep(16); // ~60 FPS
 }
 ```
+
+#### JavaScript Engine Selection
+
+SharpJS supports multiple JavaScript engines. You can choose the engine when creating the `PluginOrchestrator` or `ScriptEnvironment`:
+
+```csharp
+// Use V8 (default, high performance)
+using var orchestratorV8 = new PluginOrchestrator("./plugins", JsEngineType.V8);
+
+// Use QuickJS (lightweight, embedded-friendly)
+using var orchestratorQjs = new PluginOrchestrator("./plugins", JsEngineType.QuickJS);
+
+// Use Node.js (full Node.js API support - requires libnode installed)
+using var orchestratorNode = new PluginOrchestrator("./plugins", JsEngineType.NodeJS);
+```
+
+**Available Engines:**
+
+| Engine | Type | Description | Requirements |
+|--------|------|-------------|--------------|
+| **V8** | `JsEngineType.V8` | High-performance V8 engine (default) | libc++ on Linux |
+| **QuickJS** | `JsEngineType.QuickJS` | Lightweight, embedded-friendly | None |
+| **Node.js** | `JsEngineType.NodeJS` | Full Node.js API support | libnode.so installed |
 
 #### Creating a Plugin
 
@@ -330,7 +353,7 @@ dotnet build SharpJS.Core
 ### 特性
 
 - ✨ **纯 .NET 实现**：适用于任何 .NET 8.0+ 环境
-- 🚀 **PuerTS 集成**：采用 PuerTS V8 引擎实现高性能 JavaScript 执行
+- 🚀 **多 JavaScript 引擎支持**：可选择 V8、QuickJS 或 Node.js 引擎
 - 🔌 **C# ↔ JavaScript 互操作**：C# 和 JavaScript 之间的无缝双向通信
 - 📦 **插件管理**：内置插件编排器，具有完整的生命周期管理（初始化/更新/关闭）
 - 🛠️ **易用的 API**：简单的 API 用于向插件公开 C# 功能
@@ -364,7 +387,7 @@ dotnet add package SharpJS.Core
 using SharpJS.Core;
 using System;
 
-// 创建插件编排器
+// 创建插件编排器（默认使用 V8 引擎）
 using var orchestrator = new PluginOrchestrator("./plugins");
 
 // 创建并公开宿主 API
@@ -383,6 +406,29 @@ while (running)
     System.Threading.Thread.Sleep(16); // ~60 FPS
 }
 ```
+
+#### JavaScript 引擎选择
+
+SharpJS 支持多种 JavaScript 引擎。您可以在创建 `PluginOrchestrator` 或 `ScriptEnvironment` 时选择引擎：
+
+```csharp
+// 使用 V8（默认，高性能）
+using var orchestratorV8 = new PluginOrchestrator("./plugins", JsEngineType.V8);
+
+// 使用 QuickJS（轻量级，适合嵌入式）
+using var orchestratorQjs = new PluginOrchestrator("./plugins", JsEngineType.QuickJS);
+
+// 使用 Node.js（完整 Node.js API 支持 - 需要安装 libnode）
+using var orchestratorNode = new PluginOrchestrator("./plugins", JsEngineType.NodeJS);
+```
+
+**可用引擎：**
+
+| 引擎 | 类型 | 描述 | 依赖 |
+|------|------|------|------|
+| **V8** | `JsEngineType.V8` | 高性能 V8 引擎（默认） | Linux 上需要 libc++ |
+| **QuickJS** | `JsEngineType.QuickJS` | 轻量级，适合嵌入式 | 无 |
+| **Node.js** | `JsEngineType.NodeJS` | 完整 Node.js API 支持 | 需要安装 libnode.so |
 
 #### 创建插件
 

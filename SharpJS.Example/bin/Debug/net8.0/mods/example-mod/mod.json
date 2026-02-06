@@ -1,8 +1,0 @@
-{
-  "id": "example-mod",
-  "name": "Example Mod",
-  "version": "1.0.0",
-  "description": "A simple example mod demonstrating SharpJS functionality",
-  "author": "SharpJS",
-  "entryPoint": "main.js"
-}

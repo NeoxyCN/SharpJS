@@ -13,11 +13,17 @@ namespace SharpJS.Example
             Console.WriteLine("PuerTS-powered extensibility for .NET applications");
             Console.WriteLine();
 
+            // Parse command-line arguments for engine selection
+            var engineType = ParseEngineType(args);
+            Console.WriteLine($"JavaScript Engine: {engineType}");
+            Console.WriteLine();
+
             var pluginsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             
             PrepareExamplePlugin(pluginsDirectory);
 
-            using (var orchestrator = new PluginOrchestrator(pluginsDirectory))
+            // Create orchestrator with specified engine type
+            using (var orchestrator = new PluginOrchestrator(pluginsDirectory, engineType))
             {
                 var hostBridge = new HostBridge();
                 orchestrator.RegisterNativeApi("host", hostBridge);
@@ -25,6 +31,7 @@ namespace SharpJS.Example
                 Console.WriteLine("Initializing plugins...");
                 orchestrator.InitializeAllPlugins();
                 Console.WriteLine($"Active plugins: {orchestrator.ActivePlugins.Count}");
+                Console.WriteLine($"Engine: {orchestrator.EngineType}");
                 Console.WriteLine();
 
                 Console.WriteLine("Running update loop (10 iterations)...");
@@ -58,6 +65,41 @@ namespace SharpJS.Example
             }
 
             Console.WriteLine("Application terminated.");
+        }
+
+        static JsEngineType ParseEngineType(string[] args)
+        {
+            // Default to V8
+            var engineType = JsEngineType.V8;
+
+            // Check for --engine argument
+            for (int i = 0; i < args.Length; i++)
+            {
+                if ((args[i] == "--engine" || args[i] == "-e") && i + 1 < args.Length)
+                {
+                    engineType = ParseEngineName(args[i + 1], JsEngineType.V8);
+                    break;
+                }
+            }
+
+            // Also check for positional argument
+            if (args.Length > 0 && !args[0].StartsWith("-"))
+            {
+                engineType = ParseEngineName(args[0], engineType);
+            }
+
+            return engineType;
+        }
+
+        static JsEngineType ParseEngineName(string engineName, JsEngineType defaultEngine)
+        {
+            return engineName.ToLowerInvariant() switch
+            {
+                "v8" => JsEngineType.V8,
+                "quickjs" or "qjs" => JsEngineType.QuickJS,
+                "nodejs" or "node" => JsEngineType.NodeJS,
+                _ => defaultEngine
+            };
         }
 
         static void PrepareExamplePlugin(string pluginsDirectory)

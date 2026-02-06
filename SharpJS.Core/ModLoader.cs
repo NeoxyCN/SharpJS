@@ -16,12 +16,33 @@ namespace SharpJS.Core
         private readonly string _pluginsRootPath;
         private bool _disposed;
 
+        /// <summary>
+        /// Gets the collection of currently active plugins
+        /// </summary>
         public IReadOnlyCollection<IPluginModule> ActivePlugins => _activePlugins.AsReadOnly();
 
-        public PluginOrchestrator(string pluginsRootPath)
+        /// <summary>
+        /// Gets the JavaScript engine type used by this orchestrator
+        /// </summary>
+        public JsEngineType EngineType => _scriptEnvironment.EngineType;
+
+        /// <summary>
+        /// Creates a new PluginOrchestrator with V8 engine (default)
+        /// </summary>
+        /// <param name="pluginsRootPath">Root directory for plugins</param>
+        public PluginOrchestrator(string pluginsRootPath) : this(pluginsRootPath, JsEngineType.V8)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new PluginOrchestrator with the specified engine type
+        /// </summary>
+        /// <param name="pluginsRootPath">Root directory for plugins</param>
+        /// <param name="engineType">The JavaScript engine to use</param>
+        public PluginOrchestrator(string pluginsRootPath, JsEngineType engineType)
         {
             _pluginsRootPath = pluginsRootPath ?? throw new ArgumentNullException(nameof(pluginsRootPath));
-            _scriptEnvironment = new ScriptEnvironment();
+            _scriptEnvironment = new ScriptEnvironment(engineType);
             _activePlugins = new List<IPluginModule>();
 
             if (!Directory.Exists(_pluginsRootPath))

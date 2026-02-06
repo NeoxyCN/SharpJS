@@ -4,101 +4,101 @@ using System.Collections.Generic;
 namespace SharpJS.Core
 {
     /// <summary>
-    /// Game API that can be exposed to JavaScript mods
-    /// This provides a safe interface for mods to interact with the game
+    /// Bridge API between native code and JavaScript plugins
+    /// Provides safe methods for plugin interaction with the host application
     /// </summary>
-    public class GameApi
+    public class HostBridge
     {
-        private readonly Dictionary<string, Action<string>> _eventHandlers;
-        private readonly Dictionary<string, object> _gameState;
+        private readonly Dictionary<string, Action<string>> _callbackRegistry;
+        private readonly Dictionary<string, object> _sharedDataStore;
 
-        public GameApi()
+        public HostBridge()
         {
-            _eventHandlers = new Dictionary<string, Action<string>>();
-            _gameState = new Dictionary<string, object>();
+            _callbackRegistry = new Dictionary<string, Action<string>>();
+            _sharedDataStore = new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// Logs a message from a mod
+        /// Writes a message to the console from plugin code
         /// </summary>
-        public void Log(string message)
+        public void WriteMessage(string content)
         {
-            Console.WriteLine($"[MOD] {message}");
+            Console.WriteLine($"[PLUGIN] {content}");
         }
 
         /// <summary>
-        /// Registers an event handler
+        /// Registers a callback for a named event
         /// </summary>
-        public void On(string eventName, Action<string> handler)
+        public void RegisterCallback(string eventIdentifier, Action<string> callback)
         {
-            if (!_eventHandlers.ContainsKey(eventName))
+            if (!_callbackRegistry.ContainsKey(eventIdentifier))
             {
-                _eventHandlers[eventName] = handler;
+                _callbackRegistry[eventIdentifier] = callback;
             }
             else
             {
-                _eventHandlers[eventName] += handler;
+                _callbackRegistry[eventIdentifier] += callback;
             }
         }
 
         /// <summary>
-        /// Triggers an event
+        /// Triggers a registered event with optional data
         /// </summary>
-        public void Emit(string eventName, string data = "")
+        public void TriggerEvent(string eventIdentifier, string payload = "")
         {
-            if (_eventHandlers.ContainsKey(eventName))
+            if (_callbackRegistry.ContainsKey(eventIdentifier))
             {
                 try
                 {
-                    _eventHandlers[eventName]?.Invoke(data);
+                    _callbackRegistry[eventIdentifier]?.Invoke(payload);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error in event handler for {eventName}: {ex.Message}");
+                    Console.WriteLine($"Error in callback for {eventIdentifier}: {ex.Message}");
                 }
             }
         }
 
         /// <summary>
-        /// Gets a value from game state
+        /// Retrieves data from the shared store
         /// </summary>
-        public object? GetState(string key)
+        public object? RetrieveData(string dataKey)
         {
-            return _gameState.ContainsKey(key) ? _gameState[key] : null;
+            return _sharedDataStore.ContainsKey(dataKey) ? _sharedDataStore[dataKey] : null;
         }
 
         /// <summary>
-        /// Sets a value in game state
+        /// Stores data in the shared store
         /// </summary>
-        public void SetState(string key, object value)
+        public void StoreData(string dataKey, object dataValue)
         {
-            _gameState[key] = value;
+            _sharedDataStore[dataKey] = dataValue;
         }
 
         /// <summary>
-        /// Gets the current game time (example)
+        /// Gets the current application timestamp
         /// </summary>
-        public double GetTime()
+        public double GetCurrentTimestamp()
         {
             return DateTime.Now.TimeOfDay.TotalSeconds;
         }
 
         /// <summary>
-        /// Spawns an entity (example game function)
+        /// Creates a new entity in the application (example functionality)
         /// </summary>
-        public string SpawnEntity(string entityType, double x, double y)
+        public string CreateEntity(string entityClass, double positionX, double positionY)
         {
-            var entityId = Guid.NewGuid().ToString();
-            Log($"Spawning {entityType} at ({x}, {y}) with ID {entityId}");
-            return entityId;
+            var entityIdentifier = Guid.NewGuid().ToString();
+            WriteMessage($"Creating {entityClass} at position ({positionX}, {positionY}) with ID {entityIdentifier}");
+            return entityIdentifier;
         }
 
         /// <summary>
-        /// Removes an entity (example game function)
+        /// Destroys an entity by its identifier (example functionality)
         /// </summary>
-        public void RemoveEntity(string entityId)
+        public void DestroyEntity(string entityIdentifier)
         {
-            Log($"Removing entity {entityId}");
+            WriteMessage($"Destroying entity {entityIdentifier}");
         }
     }
 }

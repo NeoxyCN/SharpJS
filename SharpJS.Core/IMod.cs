@@ -3,38 +3,16 @@ using System;
 namespace SharpJS.Core
 {
     /// <summary>
-    /// Interface that all game mods must implement
+    /// Contract for plugin modules in the modding system
     /// </summary>
-    public interface IMod
+    public interface IPluginModule
     {
-        /// <summary>
-        /// Unique identifier for the mod
-        /// </summary>
-        string Id { get; }
-
-        /// <summary>
-        /// Display name of the mod
-        /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        /// Version of the mod
-        /// </summary>
-        string Version { get; }
-
-        /// <summary>
-        /// Called when the mod is loaded
-        /// </summary>
-        void OnLoad();
-
-        /// <summary>
-        /// Called when the mod is unloaded
-        /// </summary>
-        void OnUnload();
-
-        /// <summary>
-        /// Called on each update tick
-        /// </summary>
-        void OnUpdate();
+        string Identifier { get; }
+        string DisplayName { get; }
+        string VersionNumber { get; }
+        
+        void Initialize();
+        void Shutdown();
+        void PerformUpdate();
     }
 }

@@ -7,189 +7,178 @@ using System.Text.Json;
 namespace SharpJS.Core
 {
     /// <summary>
-    /// Manages loading, unloading, and updating of game mods
+    /// Plugin orchestrator that manages JavaScript-based extensions
     /// </summary>
-    public class ModLoader : IDisposable
+    public class PluginOrchestrator : IDisposable
     {
-        private readonly JsRuntime _runtime;
-        private readonly List<IMod> _loadedMods;
-        private readonly string _modsDirectory;
+        private readonly ScriptEnvironment _scriptEnvironment;
+        private readonly List<IPluginModule> _activePlugins;
+        private readonly string _pluginsRootPath;
         private bool _disposed;
 
-        public IReadOnlyList<IMod> LoadedMods => _loadedMods.AsReadOnly();
+        public IReadOnlyCollection<IPluginModule> ActivePlugins => _activePlugins.AsReadOnly();
 
-        public ModLoader(string modsDirectory)
+        public PluginOrchestrator(string pluginsRootPath)
         {
-            _modsDirectory = modsDirectory ?? throw new ArgumentNullException(nameof(modsDirectory));
-            _runtime = new JsRuntime();
-            _loadedMods = new List<IMod>();
+            _pluginsRootPath = pluginsRootPath ?? throw new ArgumentNullException(nameof(pluginsRootPath));
+            _scriptEnvironment = new ScriptEnvironment();
+            _activePlugins = new List<IPluginModule>();
 
-            // Create mods directory if it doesn't exist
-            if (!Directory.Exists(_modsDirectory))
+            if (!Directory.Exists(_pluginsRootPath))
             {
-                Directory.CreateDirectory(_modsDirectory);
+                Directory.CreateDirectory(_pluginsRootPath);
             }
         }
 
         /// <summary>
-        /// Exposes a C# object to JavaScript mods
+        /// Makes a .NET object accessible from JavaScript plugins
         /// </summary>
-        /// <param name="name">Name to expose as</param>
-        /// <param name="obj">Object to expose</param>
-        public void ExposeApi(string name, object obj)
+        public void RegisterNativeApi(string apiName, object apiInstance)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ModLoader));
-
-            _runtime.RegisterObject(name, obj);
+            EnsureNotDisposed();
+            _scriptEnvironment.BindGlobalObject(apiName, apiInstance);
         }
 
         /// <summary>
-        /// Discovers and loads all mods from the mods directory
+        /// Scans and initializes all available plugins
         /// </summary>
-        public void LoadAllMods()
+        public void InitializeAllPlugins()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ModLoader));
+            EnsureNotDisposed();
 
-            var modDirs = Directory.GetDirectories(_modsDirectory);
+            var pluginDirectories = Directory.GetDirectories(_pluginsRootPath);
             
-            foreach (var modDir in modDirs)
+            foreach (var directory in pluginDirectories)
             {
                 try
                 {
-                    LoadModFromDirectory(modDir);
+                    LoadPluginFromDirectory(directory);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to load mod from {modDir}: {ex.Message}");
+                    Console.WriteLine($"Failed to load plugin from {directory}: {ex.Message}");
                 }
             }
         }
 
-        /// <summary>
-        /// Loads a single mod from a directory
-        /// </summary>
-        private void LoadModFromDirectory(string modDirectory)
+        private void LoadPluginFromDirectory(string directoryPath)
         {
-            var manifestPath = Path.Combine(modDirectory, "mod.json");
+            var configPath = Path.Combine(directoryPath, "plugin.json");
             
-            if (!File.Exists(manifestPath))
+            if (!File.Exists(configPath))
             {
-                Console.WriteLine($"No mod.json found in {modDirectory}");
+                Console.WriteLine($"No plugin.json found in {directoryPath}");
                 return;
             }
 
-            var manifestJson = File.ReadAllText(manifestPath);
-            var manifest = JsonSerializer.Deserialize<ModManifest>(manifestJson);
+            var configContent = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<PluginConfiguration>(configContent);
 
-            if (manifest == null)
+            if (config == null)
             {
-                throw new InvalidOperationException("Failed to parse mod.json");
+                throw new InvalidOperationException("Failed to parse plugin.json");
             }
 
-            var scriptPath = Path.Combine(modDirectory, manifest.EntryPoint ?? "main.js");
+            var scriptPath = Path.Combine(directoryPath, config.MainScript ?? "index.js");
             
-            var mod = new JsMod(
-                manifest.Id ?? Path.GetFileName(modDirectory),
-                manifest.Name ?? "Unnamed Mod",
-                manifest.Version ?? "1.0.0",
+            var plugin = new JavaScriptPlugin(
+                config.PluginId ?? Path.GetFileName(directoryPath),
+                config.PluginName ?? "Unnamed Plugin",
+                config.PluginVersion ?? "1.0.0",
                 scriptPath,
-                _runtime
+                _scriptEnvironment
             );
 
-            mod.OnLoad();
-            _loadedMods.Add(mod);
+            plugin.Initialize();
+            _activePlugins.Add(plugin);
         }
 
         /// <summary>
-        /// Loads a specific mod by its ID
+        /// Initializes a specific plugin by identifier
         /// </summary>
-        public void LoadMod(string modId)
+        public void InitializePlugin(string pluginId)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ModLoader));
+            EnsureNotDisposed();
 
-            var modDir = Path.Combine(_modsDirectory, modId);
-            if (!Directory.Exists(modDir))
+            var pluginPath = Path.Combine(_pluginsRootPath, pluginId);
+            if (!Directory.Exists(pluginPath))
             {
-                throw new DirectoryNotFoundException($"Mod directory not found: {modDir}");
+                throw new DirectoryNotFoundException($"Plugin directory not found: {pluginPath}");
             }
 
-            LoadModFromDirectory(modDir);
+            LoadPluginFromDirectory(pluginPath);
         }
 
         /// <summary>
-        /// Unloads a specific mod by its ID
+        /// Shuts down a specific plugin by identifier
         /// </summary>
-        public void UnloadMod(string modId)
+        public void ShutdownPlugin(string pluginId)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ModLoader));
+            EnsureNotDisposed();
 
-            var mod = _loadedMods.FirstOrDefault(m => m.Id == modId);
-            if (mod != null)
+            var plugin = _activePlugins.FirstOrDefault(p => p.Identifier == pluginId);
+            if (plugin != null)
             {
-                mod.OnUnload();
-                _loadedMods.Remove(mod);
+                plugin.Shutdown();
+                _activePlugins.Remove(plugin);
             }
         }
 
         /// <summary>
-        /// Updates all loaded mods
-        /// Should be called in the game loop
+        /// Updates all active plugins - call this in your game loop
         /// </summary>
-        public void UpdateMods()
+        public void UpdateAllPlugins()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(ModLoader));
+            EnsureNotDisposed();
 
-            // Update JavaScript runtime
-            _runtime.Tick();
+            _scriptEnvironment.ProcessTasks();
 
-            // Update all mods
-            foreach (var mod in _loadedMods.ToList())
+            foreach (var plugin in _activePlugins.ToList())
             {
                 try
                 {
-                    mod.OnUpdate();
+                    plugin.PerformUpdate();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error updating mod {mod.Name}: {ex.Message}");
+                    Console.WriteLine($"Error updating plugin {plugin.DisplayName}: {ex.Message}");
                 }
             }
+        }
+
+        private void EnsureNotDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(PluginOrchestrator));
         }
 
         public void Dispose()
         {
-            if (_disposed)
-                return;
+            if (_disposed) return;
 
-            // Unload all mods
-            foreach (var mod in _loadedMods.ToList())
+            foreach (var plugin in _activePlugins.ToList())
             {
                 try
                 {
-                    mod.OnUnload();
+                    plugin.Shutdown();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error unloading mod {mod.Name}: {ex.Message}");
+                    Console.WriteLine($"Error shutting down plugin {plugin.DisplayName}: {ex.Message}");
                 }
             }
 
-            _loadedMods.Clear();
-            _runtime?.Dispose();
+            _activePlugins.Clear();
+            _scriptEnvironment?.Dispose();
             _disposed = true;
         }
 
-        private class ModManifest
+        private class PluginConfiguration
         {
-            public string? Id { get; set; }
-            public string? Name { get; set; }
-            public string? Version { get; set; }
-            public string? EntryPoint { get; set; }
+            public string? PluginId { get; set; }
+            public string? PluginName { get; set; }
+            public string? PluginVersion { get; set; }
+            public string? MainScript { get; set; }
             public string? Description { get; set; }
             public string? Author { get; set; }
         }

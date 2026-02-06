@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SharpJS.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+934645fad11d919927a206f324ef1af4560ead82")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80dd9ed05ca74e275e4e864b0d48f170a0e0c109")]
 [assembly: System.Reflection.AssemblyProductAttribute("SharpJS.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SharpJS.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

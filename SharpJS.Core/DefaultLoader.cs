@@ -6,122 +6,119 @@ using Puerts;
 namespace SharpJS.Core
 {
     /// <summary>
-    /// Custom loader for PuerTS in .NET environment
-    /// Implements ILoader to load JavaScript files from filesystem and embedded resources
+    /// File loader implementation for PuerTS in standalone .NET applications
+    /// Loads scripts from filesystem and NuGet package content
     /// </summary>
-    public class DefaultLoader : ILoader, IModuleChecker
+    public class ScriptFileLoader : ILoader, IModuleChecker
     {
-        private readonly string _rootPath;
-        private readonly string _puertsContentPath;
+        private readonly string _baseDirectory;
+        private readonly string _puertsPackageContentPath;
 
-        public DefaultLoader(string? rootPath = null)
+        public ScriptFileLoader(string? baseDirectory = null)
         {
-            _rootPath = rootPath ?? AppDomain.CurrentDomain.BaseDirectory;
+            _baseDirectory = baseDirectory ?? AppDomain.CurrentDomain.BaseDirectory;
             
-            // Find PuerTS content files path
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            _puertsContentPath = Path.Combine(userProfile, ".nuget", "packages", "puerts.core", "3.0.0", "contentFiles");
+            var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _puertsPackageContentPath = Path.Combine(homeDirectory, ".nuget", "packages", 
+                "puerts.core", "3.0.0", "contentFiles");
         }
 
-        /// <summary>
-        /// Checks if a file path is an ES6 module
-        /// </summary>
-        public bool IsESM(string filepath)
+        public bool IsESM(string scriptPath)
         {
-            // Consider .mjs files as ES modules
-            return filepath.EndsWith(".mjs");
+            return scriptPath.EndsWith(".mjs", StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Reads a file and returns its content along with debug path
-        /// </summary>
-        public string ReadFile(string filepath, out string debugpath)
+        public string ReadFile(string scriptPath, out string debugInfo)
         {
-            debugpath = filepath;
+            debugInfo = scriptPath;
 
-            // Try to load from PuerTS content files first (for built-in files)
-            if (filepath.StartsWith("puerts/"))
+            // Priority 1: Check PuerTS built-in files
+            if (scriptPath.StartsWith("puerts/"))
             {
-                var puertsFilePath = Path.Combine(_puertsContentPath, filepath);
-                if (File.Exists(puertsFilePath))
+                var packageFilePath = Path.Combine(_puertsPackageContentPath, scriptPath);
+                if (File.Exists(packageFilePath))
                 {
-                    debugpath = puertsFilePath;
-                    return File.ReadAllText(puertsFilePath);
+                    debugInfo = packageFilePath;
+                    return File.ReadAllText(packageFilePath);
                 }
             }
 
-            // Try to load from filesystem
-            var fullPath = Path.IsPathRooted(filepath) 
-                ? filepath 
-                : Path.Combine(_rootPath, filepath);
+            // Priority 2: Check absolute or relative paths
+            var absolutePath = Path.IsPathRooted(scriptPath) 
+                ? scriptPath 
+                : Path.Combine(_baseDirectory, scriptPath);
 
-            if (File.Exists(fullPath))
+            if (File.Exists(absolutePath))
             {
-                debugpath = fullPath;
-                return File.ReadAllText(fullPath);
+                debugInfo = absolutePath;
+                return File.ReadAllText(absolutePath);
             }
 
-            // Try with .js extension if not present
-            if (!filepath.EndsWith(".js") && !filepath.EndsWith(".mjs") && !filepath.EndsWith(".cjs"))
+            // Priority 3: Try with .js extension
+            if (!HasScriptExtension(scriptPath))
             {
-                var jsPath = fullPath + ".js";
-                if (File.Exists(jsPath))
+                var withExtension = absolutePath + ".js";
+                if (File.Exists(withExtension))
                 {
-                    debugpath = jsPath;
-                    return File.ReadAllText(jsPath);
+                    debugInfo = withExtension;
+                    return File.ReadAllText(withExtension);
                 }
             }
 
-            // Try to load from embedded resources
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"SharpJS.Core.Scripts.{filepath.Replace("/", ".").Replace("\\", ".")}";
-            
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            // Priority 4: Check embedded resources
+            var resourceContent = TryLoadFromEmbeddedResources(scriptPath, out var resourcePath);
+            if (resourceContent != null)
             {
-                if (stream != null)
-                {
-                    using (var reader = new StreamReader(stream))
-                    {
-                        debugpath = $"embedded://{resourceName}";
-                        return reader.ReadToEnd();
-                    }
-                }
+                debugInfo = resourcePath;
+                return resourceContent;
             }
 
-            throw new FileNotFoundException($"File not found: {filepath}");
+            throw new FileNotFoundException($"Script file not found: {scriptPath}");
         }
 
-        /// <summary>
-        /// Checks if a file exists
-        /// </summary>
-        public bool FileExists(string filepath)
+        public bool FileExists(string scriptPath)
         {
-            // Check PuerTS content files
-            if (filepath.StartsWith("puerts/"))
+            if (scriptPath.StartsWith("puerts/"))
             {
-                var puertsFilePath = Path.Combine(_puertsContentPath, filepath);
-                if (File.Exists(puertsFilePath))
+                var packageFilePath = Path.Combine(_puertsPackageContentPath, scriptPath);
+                if (File.Exists(packageFilePath))
                     return true;
             }
 
-            var fullPath = Path.IsPathRooted(filepath) 
-                ? filepath 
-                : Path.Combine(_rootPath, filepath);
+            var absolutePath = Path.IsPathRooted(scriptPath) 
+                ? scriptPath 
+                : Path.Combine(_baseDirectory, scriptPath);
 
-            if (File.Exists(fullPath))
+            if (File.Exists(absolutePath))
                 return true;
 
-            // Check with .js extension
-            if (!filepath.EndsWith(".js") && !filepath.EndsWith(".mjs") && !filepath.EndsWith(".cjs"))
+            if (!HasScriptExtension(scriptPath) && File.Exists(absolutePath + ".js"))
+                return true;
+
+            return TryLoadFromEmbeddedResources(scriptPath, out _) != null;
+        }
+
+        private bool HasScriptExtension(string path)
+        {
+            return path.EndsWith(".js") || path.EndsWith(".mjs") || path.EndsWith(".cjs");
+        }
+
+        private string? TryLoadFromEmbeddedResources(string scriptPath, out string resourcePath)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var normalizedPath = scriptPath.Replace("/", ".").Replace("\\", ".");
+            var resourceName = $"{assembly.GetName().Name}.Scripts.{normalizedPath}";
+            
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
             {
-                if (File.Exists(fullPath + ".js"))
-                    return true;
+                using var reader = new StreamReader(stream);
+                resourcePath = $"resource://{resourceName}";
+                return reader.ReadToEnd();
             }
 
-            // Check embedded resources
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"SharpJS.Core.Scripts.{filepath.Replace("/", ".").Replace("\\", ".")}";
-            return assembly.GetManifestResourceStream(resourceName) != null;
+            resourcePath = string.Empty;
+            return null;
         }
     }
 }

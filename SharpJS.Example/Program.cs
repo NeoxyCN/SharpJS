@@ -9,142 +9,122 @@ namespace SharpJS.Example
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("=== SharpJS Game Modding Example ===");
-            Console.WriteLine("PuerTS-based game modding system for .NET");
+            Console.WriteLine("=== SharpJS Plugin System Demo ===");
+            Console.WriteLine("PuerTS-powered extensibility for .NET applications");
             Console.WriteLine();
 
-            // Create mods directory
-            var modsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mods");
+            var pluginsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             
-            // Create example mod if it doesn't exist
-            CreateExampleMod(modsPath);
+            PrepareExamplePlugin(pluginsDirectory);
 
-            // Initialize mod loader
-            using (var modLoader = new ModLoader(modsPath))
+            using (var orchestrator = new PluginOrchestrator(pluginsDirectory))
             {
-                // Create and expose game API to mods
-                var gameApi = new GameApi();
-                modLoader.ExposeApi("game", gameApi);
+                var hostBridge = new HostBridge();
+                orchestrator.RegisterNativeApi("host", hostBridge);
 
-                Console.WriteLine("Loading mods...");
-                modLoader.LoadAllMods();
-                Console.WriteLine($"Loaded {modLoader.LoadedMods.Count} mod(s)");
+                Console.WriteLine("Initializing plugins...");
+                orchestrator.InitializeAllPlugins();
+                Console.WriteLine($"Active plugins: {orchestrator.ActivePlugins.Count}");
                 Console.WriteLine();
 
-                // Simulate game loop
-                Console.WriteLine("Starting game loop (press Ctrl+C to exit)...");
+                Console.WriteLine("Running update loop (10 iterations)...");
                 Console.WriteLine();
 
-                var running = true;
+                bool continueRunning = true;
                 Console.CancelKeyPress += (sender, e) =>
                 {
                     e.Cancel = true;
-                    running = false;
+                    continueRunning = false;
                 };
 
-                int frameCount = 0;
-                while (running && frameCount < 10) // Run for 10 frames for demonstration
+                int iteration = 0;
+                while (continueRunning && iteration < 10)
                 {
-                    // Emit game tick event
-                    gameApi.Emit("tick", frameCount.ToString());
+                    hostBridge.TriggerEvent("frame_update", iteration.ToString());
+                    orchestrator.UpdateAllPlugins();
 
-                    // Update all mods
-                    modLoader.UpdateMods();
+                    iteration++;
+                    Thread.Sleep(1000);
 
-                    frameCount++;
-                    Thread.Sleep(1000); // 1 second per frame for demonstration
-
-                    if (frameCount == 5)
+                    if (iteration == 5)
                     {
-                        Console.WriteLine("\n--- Triggering custom event ---");
-                        gameApi.Emit("custom_event", "Hello from game!");
+                        Console.WriteLine("\n--- Triggering special event ---");
+                        hostBridge.TriggerEvent("milestone_reached", "Halfway complete!");
                     }
                 }
 
                 Console.WriteLine();
-                Console.WriteLine("Shutting down...");
+                Console.WriteLine("Shutting down gracefully...");
             }
 
-            Console.WriteLine("Program ended.");
+            Console.WriteLine("Application terminated.");
         }
 
-        static void CreateExampleMod(string modsPath)
+        static void PrepareExamplePlugin(string pluginsDirectory)
         {
-            var exampleModPath = Path.Combine(modsPath, "example-mod");
+            var demoPluginPath = Path.Combine(pluginsDirectory, "demo-plugin");
             
-            if (!Directory.Exists(exampleModPath))
+            if (!Directory.Exists(demoPluginPath))
             {
-                Directory.CreateDirectory(exampleModPath);
+                Directory.CreateDirectory(demoPluginPath);
 
-                // Create mod.json
-                var manifestPath = Path.Combine(exampleModPath, "mod.json");
-                File.WriteAllText(manifestPath, @"{
-  ""id"": ""example-mod"",
-  ""name"": ""Example Mod"",
-  ""version"": ""1.0.0"",
-  ""description"": ""A simple example mod demonstrating SharpJS functionality"",
-  ""author"": ""SharpJS"",
-  ""entryPoint"": ""main.js""
+                File.WriteAllText(Path.Combine(demoPluginPath, "plugin.json"), @"{
+  ""pluginId"": ""demo-plugin"",
+  ""pluginName"": ""Demo Plugin"",
+  ""pluginVersion"": ""1.0.0"",
+  ""description"": ""Demonstration of SharpJS plugin capabilities"",
+  ""author"": ""SharpJS Team"",
+  ""mainScript"": ""index.js""
 }");
 
-                // Create main.js
-                var scriptPath = Path.Combine(exampleModPath, "main.js");
-                File.WriteAllText(scriptPath, @"// Example mod for SharpJS
-// This demonstrates how to create a mod using JavaScript/TypeScript
+                File.WriteAllText(Path.Combine(demoPluginPath, "index.js"), @"// Demo Plugin for SharpJS
+const host = global.host || globalThis.host;
 
-// Access the game API
-const api = game || (typeof global !== 'undefined' ? global.game : globalThis.game);
+let updateCounter = 0;
 
-// Store mod state
-let tickCount = 0;
-
-// Initialize the mod
-global.mods['example-mod'].onLoad = function() {
-    api.Log('Example mod loaded! Hello from JavaScript!');
+global.plugins['demo-plugin'].initialize = function() {
+    host.WriteMessage('Demo plugin initialized successfully!');
     
-    // Register event handler
-    api.On('tick', function(data) {
-        // This will be called every game tick
+    host.RegisterCallback('frame_update', function(data) {
+        // Frame update callback
     });
     
-    api.On('custom_event', function(data) {
-        api.Log('Received custom event: ' + data);
+    host.RegisterCallback('milestone_reached', function(data) {
+        host.WriteMessage('Milestone event received: ' + data);
     });
 };
 
-// Update function called every frame
-global.mods['example-mod'].onUpdate = function() {
-    tickCount++;
+global.plugins['demo-plugin'].update = function() {
+    updateCounter++;
     
-    if (tickCount === 1) {
-        api.Log('First update tick!');
-        api.SetState('mod_active', true);
+    if (updateCounter === 1) {
+        host.WriteMessage('First update cycle executed');
+        host.StoreData('plugin_status', true);
     }
     
-    if (tickCount === 3) {
-        api.Log('Spawning an entity...');
-        const entityId = api.SpawnEntity('test_entity', 100, 200);
-        api.SetState('spawned_entity', entityId);
+    if (updateCounter === 3) {
+        host.WriteMessage('Creating test entity...');
+        const entityId = host.CreateEntity('demo_object', 150, 250);
+        host.StoreData('created_entity_id', entityId);
     }
     
-    if (tickCount === 7) {
-        const entityId = api.GetState('spawned_entity');
-        if (entityId) {
-            api.Log('Removing spawned entity...');
-            api.RemoveEntity(entityId);
+    if (updateCounter === 7) {
+        const storedId = host.RetrieveData('created_entity_id');
+        if (storedId) {
+            host.WriteMessage('Destroying previously created entity...');
+            host.DestroyEntity(storedId);
         }
     }
 };
 
-// Cleanup function
-global.mods['example-mod'].onUnload = function() {
-    api.Log('Example mod unloading...');
+global.plugins['demo-plugin'].shutdown = function() {
+    host.WriteMessage('Demo plugin shutting down gracefully');
 };
 
-api.Log('Example mod script loaded');
+host.WriteMessage('Demo plugin script loaded');
 ");
 
-                Console.WriteLine($"Created example mod at: {exampleModPath}");
+                Console.WriteLine($"Created demo plugin in: {demoPluginPath}");
                 Console.WriteLine();
             }
         }

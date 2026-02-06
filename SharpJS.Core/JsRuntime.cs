@@ -4,103 +4,90 @@ using Puerts;
 namespace SharpJS.Core
 {
     /// <summary>
-    /// JavaScript runtime wrapper for PuerTS
-    /// Provides the core JavaScript execution environment for game mods
+    /// JavaScript execution environment manager using PuerTS
+    /// Handles script compilation and execution with proper lifecycle
     /// </summary>
-    public class JsRuntime : IDisposable
+    public class ScriptEnvironment : IDisposable
     {
-        private readonly ScriptEnv _jsEnv;
-        private readonly ILoader _loader;
-        private bool _disposed;
+        private readonly ScriptEnv _environment;
+        private readonly ILoader _scriptLoader;
+        private bool _isDisposed;
 
-        public JsRuntime() : this(new DefaultLoader())
+        public ScriptEnvironment() : this(new ScriptFileLoader())
         {
         }
 
-        public JsRuntime(ILoader loader)
+        public ScriptEnvironment(ILoader scriptLoader)
         {
-            _loader = loader;
-            var backend = new BackendV8(loader);
-            _jsEnv = new ScriptEnv(backend);
-        }
-
-        /// <summary>
-        /// Evaluates JavaScript code in the runtime environment
-        /// </summary>
-        /// <param name="code">JavaScript code to execute</param>
-        public void Eval(string code)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(JsRuntime));
-
-            _jsEnv.Eval(code);
+            _scriptLoader = scriptLoader;
+            var v8Backend = new BackendV8(scriptLoader);
+            _environment = new ScriptEnv(v8Backend);
         }
 
         /// <summary>
-        /// Evaluates JavaScript code and returns a typed result
+        /// Executes JavaScript code without returning a value
         /// </summary>
-        /// <typeparam name="T">Expected return type</typeparam>
-        /// <param name="code">JavaScript code to execute</param>
-        /// <returns>Typed result of the evaluation</returns>
-        public T Eval<T>(string code)
+        public void Execute(string sourceCode)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(JsRuntime));
-
-            return _jsEnv.Eval<T>(code);
+            ThrowIfDisposed();
+            _environment.Eval(sourceCode);
         }
 
         /// <summary>
-        /// Executes a JavaScript module
+        /// Executes JavaScript and returns the result as specified type
         /// </summary>
-        /// <param name="moduleName">Name/path of the module to execute</param>
-        public void ExecuteModule(string moduleName)
+        public TResult Execute<TResult>(string sourceCode)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(JsRuntime));
-
-            _jsEnv.ExecuteModule(moduleName);
+            ThrowIfDisposed();
+            return _environment.Eval<TResult>(sourceCode);
         }
 
         /// <summary>
-        /// Registers a C# object/class to be accessible from JavaScript
+        /// Runs a JavaScript module by name
         /// </summary>
-        /// <param name="name">Name to expose in JavaScript</param>
-        /// <param name="obj">Object to expose</param>
-        public void RegisterObject(string name, object obj)
+        public void RunModule(string modulePath)
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(JsRuntime));
+            ThrowIfDisposed();
+            _environment.ExecuteModule(modulePath);
+        }
 
-            // Create a wrapper function that stores the object
-            var setFunc = _jsEnv.Eval<Action<object>>($@"
+        /// <summary>
+        /// Binds a .NET object to JavaScript global scope
+        /// </summary>
+        public void BindGlobalObject(string identifier, object instance)
+        {
+            ThrowIfDisposed();
+            
+            var bindingFunction = _environment.Eval<Action<object>>($@"
                 (function(obj) {{ 
-                    if (typeof global === 'undefined') globalThis['{name}'] = obj;
-                    else global['{name}'] = obj;
+                    var target = typeof global !== 'undefined' ? global : globalThis;
+                    target['{identifier}'] = obj;
                 }})
             ");
-            setFunc(obj);
+            bindingFunction(instance);
         }
 
         /// <summary>
-        /// Ticks the JavaScript environment to process pending tasks
-        /// Should be called regularly to handle async operations
+        /// Processes pending JavaScript tasks and promises
         /// </summary>
-        public void Tick()
+        public void ProcessTasks()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(JsRuntime));
+            ThrowIfDisposed();
+            _environment.Tick();
+        }
 
-            _jsEnv.Tick();
+        private void ThrowIfDisposed()
+        {
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(ScriptEnvironment));
         }
 
         public void Dispose()
         {
-            if (_disposed)
-                return;
-
-            _jsEnv?.Dispose();
-            _disposed = true;
+            if (_isDisposed) return;
+            
+            _environment?.Dispose();
+            _isDisposed = true;
         }
     }
 }

@@ -73,18 +73,11 @@ namespace SharpJS.Example
             var engineType = JsEngineType.V8;
 
             // Check for --engine argument
-            for (int i = 0; i < args.Length - 1; i++)
+            for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "--engine" || args[i] == "-e")
+                if ((args[i] == "--engine" || args[i] == "-e") && i + 1 < args.Length)
                 {
-                    var engineName = args[i + 1].ToLowerInvariant();
-                    engineType = engineName switch
-                    {
-                        "v8" => JsEngineType.V8,
-                        "quickjs" or "qjs" => JsEngineType.QuickJS,
-                        "nodejs" or "node" => JsEngineType.NodeJS,
-                        _ => JsEngineType.V8
-                    };
+                    engineType = ParseEngineName(args[i + 1], JsEngineType.V8);
                     break;
                 }
             }
@@ -92,17 +85,21 @@ namespace SharpJS.Example
             // Also check for positional argument
             if (args.Length > 0 && !args[0].StartsWith("-"))
             {
-                var engineName = args[0].ToLowerInvariant();
-                engineType = engineName switch
-                {
-                    "v8" => JsEngineType.V8,
-                    "quickjs" or "qjs" => JsEngineType.QuickJS,
-                    "nodejs" or "node" => JsEngineType.NodeJS,
-                    _ => engineType
-                };
+                engineType = ParseEngineName(args[0], engineType);
             }
 
             return engineType;
+        }
+
+        static JsEngineType ParseEngineName(string engineName, JsEngineType defaultEngine)
+        {
+            return engineName.ToLowerInvariant() switch
+            {
+                "v8" => JsEngineType.V8,
+                "quickjs" or "qjs" => JsEngineType.QuickJS,
+                "nodejs" or "node" => JsEngineType.NodeJS,
+                _ => defaultEngine
+            };
         }
 
         static void PrepareExamplePlugin(string pluginsDirectory)

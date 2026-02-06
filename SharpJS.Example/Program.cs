@@ -13,11 +13,17 @@ namespace SharpJS.Example
             Console.WriteLine("PuerTS-powered extensibility for .NET applications");
             Console.WriteLine();
 
+            // Parse command-line arguments for engine selection
+            var engineType = ParseEngineType(args);
+            Console.WriteLine($"JavaScript Engine: {engineType}");
+            Console.WriteLine();
+
             var pluginsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             
             PrepareExamplePlugin(pluginsDirectory);
 
-            using (var orchestrator = new PluginOrchestrator(pluginsDirectory))
+            // Create orchestrator with specified engine type
+            using (var orchestrator = new PluginOrchestrator(pluginsDirectory, engineType))
             {
                 var hostBridge = new HostBridge();
                 orchestrator.RegisterNativeApi("host", hostBridge);
@@ -25,6 +31,7 @@ namespace SharpJS.Example
                 Console.WriteLine("Initializing plugins...");
                 orchestrator.InitializeAllPlugins();
                 Console.WriteLine($"Active plugins: {orchestrator.ActivePlugins.Count}");
+                Console.WriteLine($"Engine: {orchestrator.EngineType}");
                 Console.WriteLine();
 
                 Console.WriteLine("Running update loop (10 iterations)...");
@@ -58,6 +65,44 @@ namespace SharpJS.Example
             }
 
             Console.WriteLine("Application terminated.");
+        }
+
+        static JsEngineType ParseEngineType(string[] args)
+        {
+            // Default to V8
+            var engineType = JsEngineType.V8;
+
+            // Check for --engine argument
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == "--engine" || args[i] == "-e")
+                {
+                    var engineName = args[i + 1].ToLowerInvariant();
+                    engineType = engineName switch
+                    {
+                        "v8" => JsEngineType.V8,
+                        "quickjs" or "qjs" => JsEngineType.QuickJS,
+                        "nodejs" or "node" => JsEngineType.NodeJS,
+                        _ => JsEngineType.V8
+                    };
+                    break;
+                }
+            }
+
+            // Also check for positional argument
+            if (args.Length > 0 && !args[0].StartsWith("-"))
+            {
+                var engineName = args[0].ToLowerInvariant();
+                engineType = engineName switch
+                {
+                    "v8" => JsEngineType.V8,
+                    "quickjs" or "qjs" => JsEngineType.QuickJS,
+                    "nodejs" or "node" => JsEngineType.NodeJS,
+                    _ => engineType
+                };
+            }
+
+            return engineType;
         }
 
         static void PrepareExamplePlugin(string pluginsDirectory)

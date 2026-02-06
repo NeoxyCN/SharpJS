@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SharpJS.Core/SharpJS.Core.csproj" />
+  <Project Path="SharpJS.Example/SharpJS.Example.csproj" />
+  <Project Path="SharpJS.Tests/SharpJS.Tests.csproj" />
+</Solution>
